@@ -44,6 +44,9 @@ public class Correction extends BaseEntity
     @Column(name = "comment")
     private String comment;
 
+    @Column(name = "tag_id")
+    private String tagId;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
@@ -58,6 +61,7 @@ public class Correction extends BaseEntity
     private List<Reaction> reactions = new ArrayList<>();
 
     @JsonIgnore
+    @Builder.Default
     @OneToMany(mappedBy = "correction", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Correction> corrections = new ArrayList<>();
 

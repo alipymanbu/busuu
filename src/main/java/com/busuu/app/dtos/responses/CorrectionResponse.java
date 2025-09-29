@@ -51,6 +51,9 @@ public class CorrectionResponse extends BaseResponse
     @JsonProperty("comment")
     private String comment;
 
+    @JsonProperty("tag_id")
+    private String tagId;
+
     @JsonProperty("reply_ids")
     private List<String> replyIds;
 

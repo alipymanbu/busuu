@@ -33,4 +33,7 @@ public class CorrectionDTO
     @NotBlank(message = "Comment cannot be blank")
     private String comment;
 
+    @JsonProperty("tag_id")
+    private String tagId;
+
 }
