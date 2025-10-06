@@ -6,6 +6,7 @@ import com.busuu.app.dtos.responses.NotificationResponse;
 import com.busuu.app.entities.User;
 import com.busuu.app.entities.Correction;
 import com.busuu.app.entities.Notification;
+import com.busuu.app.entities.enums.FriendshipStatus;
 import com.busuu.app.entities.enums.NotificationStatus;
 import com.busuu.app.entities.enums.NotificationType;
 import com.busuu.app.entities.Post;
@@ -28,6 +29,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,11 +62,10 @@ public class NotificationService implements INotificationService
 
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             User userActor = (User) auth.getPrincipal();
-            String actorId = userActor.getId();
 
             boolean giveNotification = true;
             String message = "";
-            User toUser = null;
+            List<String> toUserList = new ArrayList<>();
 
             switch (notificationType)
             {
@@ -74,7 +76,7 @@ public class NotificationService implements INotificationService
                             .orElseThrow( ()-> new DataNotFoundException("Cannot find user with ID"));
 
                     message = " has sent you a friend request";
-                    toUser = destinationUser;
+                    toUserList.add(destinationUser.getId());
 
                     break;
                 }
@@ -85,7 +87,20 @@ public class NotificationService implements INotificationService
                             .orElseThrow( ()-> new DataNotFoundException("Cannot find user with ID"));
 
                     message = " has accepted your friend request";
-                    toUser = destinationUser;
+                    toUserList.add(destinationUser.getId());
+
+                    break;
+                }
+                //DestinationId: Post
+                case NEW_POST:
+                {
+                    Post destinationPost = postRepository.findById(destinationId)
+                            .orElseThrow( ()-> new DataNotFoundException("Cannot find post with ID"));
+
+                    message = " has posted a new post";
+
+                    List<String> friendList = userRepository.findFriendIds(userActor.getId(), FriendshipStatus.ACCEPT);
+                    toUserList.addAll(friendList);
 
                     break;
                 }
@@ -96,45 +111,45 @@ public class NotificationService implements INotificationService
                             .orElseThrow( ()-> new DataNotFoundException("Cannot find post with ID"));
 
                     message = " has corrected your post";
-                    toUser = destinationPost.getUser();
+                    toUserList.add(destinationPost.getUser().getId());
 
                     break;
                 }
-                //DestinationId: Post
+                //DestinationId: Correction -> FE navigate to Post
                 case CORRECTION_REACTION:
                 {
                     Correction destinationCorrection = correctionRepository.findById(destinationId)
                             .orElseThrow( ()-> new DataNotFoundException("Cannot find correction with ID"));
 
                     if (destinationCorrection.getPost() != null) destinationId = destinationCorrection.getPost().getId();
-                    else if (destinationCorrection.getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getPost().getId();
-                    else if (destinationCorrection.getCorrection().getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getCorrection().getPost().getId();
-                    else if (destinationCorrection.getCorrection().getCorrection().getCorrection().getPost() != null)  destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getPost().getId();
-                    else if (destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getPost().getId();
-                    else destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getCorrection().getPost().getId();
+                    else destinationId = destinationCorrection.getCorrection().getPost().getId();
+
+                    //More correction level
+//                    else if (destinationCorrection.getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getPost().getId();
+//                    else if (destinationCorrection.getCorrection().getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getCorrection().getPost().getId();
+//                    else if (destinationCorrection.getCorrection().getCorrection().getCorrection().getPost() != null)  destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getPost().getId();
+//                    else if (destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getPost().getId();
+//                    else destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getCorrection().getPost().getId();
 
                     message = " has " + reactionType.name().toLowerCase() +  "d your correction";
-                    toUser = destinationCorrection.getUser();
+                    toUserList.add(destinationCorrection.getUser().getId());
 
                     break;
                 }
-                //DestinationId: Post
+                //DestinationId: Correction -> FE navigate to Post
                 case CORRECTION_REPLIED:
                 {
                     Correction destinationCorrection = correctionRepository.findById(destinationId)
                              .orElseThrow( ()-> new DataNotFoundException("Cannot find correction with ID"));
 
                     if (destinationCorrection.getPost() != null) destinationId = destinationCorrection.getPost().getId();
-                    else if (destinationCorrection.getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getPost().getId();
-                    else if (destinationCorrection.getCorrection().getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getCorrection().getPost().getId();
-                    else if (destinationCorrection.getCorrection().getCorrection().getCorrection().getPost() != null)  destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getPost().getId();
-                    else if (destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getPost() != null) destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getPost().getId();
-                    else destinationId = destinationCorrection.getCorrection().getCorrection().getCorrection().getCorrection().getCorrection().getPost().getId();
+                    else destinationId = destinationCorrection.getCorrection().getPost().getId();
 
                     message = " has replied your correction";
 
                     if (destinationCorrection.getUser().getId().equals(userActor.getId())) giveNotification = false;
-                    toUser = destinationCorrection.getUser();
+                    if (destinationCorrection.getTaggedUser() != null) toUserList.add(destinationCorrection.getTaggedUser().getId());
+                    else toUserList.add(destinationCorrection.getUser().getId());
 
                     break;
                 }
@@ -145,22 +160,32 @@ public class NotificationService implements INotificationService
 
             if (giveNotification)
             {
-                UUID uuid = UUID.randomUUID();
-                Notification newNotification = Notification.builder()
-                        .id(uuid.toString())
-                        .user(toUser)
-                        .destinationId(destinationId)
-                        .actorId(actorId)
-                        .message(message)
-                        .type(notificationType)
-                        .build();
 
-                notificationRepository.save(newNotification);
+                for (String toUser : toUserList)
+                {
 
-                //Socket
-                notificationEventPublisher.publishNotification(uuid.toString(), destinationId, actorId, message, notificationType, toUser.getId());
+                    User existingUser = userRepository.findById(toUser)
+                            .orElseThrow( ()-> new DataNotFoundException("Cannot find user with ID: " + toUser));
+
+                    UUID uuid = UUID.randomUUID();
+                    Notification newNotification = Notification.builder()
+                            .id(uuid.toString())
+                            .user(existingUser)
+                            .destinationId(destinationId)
+                            .actor(userActor)
+                            .message(message)
+                            .type(notificationType)
+                            .build();
+
+                    notificationRepository.save(newNotification);
+
+                    //Socket
+                    notificationEventPublisher.publishNotification(newNotification);
+
+                }
 
             }
+
         } catch (Exception e) {
             log.error("Failed to add notification, err="+e.getMessage());
             throw new ErrorHandleException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR,
@@ -184,7 +209,13 @@ public class NotificationService implements INotificationService
             );
 
             return notificationRepository.findByUserId(userId, PageRequest.of(page, size, sort)).map(
-                    notification -> modelMapper.map(notification, NotificationResponse.class)
+                    notification ->
+                    {
+                        NotificationResponse response = modelMapper.map(notification, NotificationResponse.class);
+                        response.setActorId(notification.getActor().getId());
+                        response.setUserId(notification.getUser().getId());
+                        return response;
+                    }
 
             );
 
@@ -226,7 +257,9 @@ public class NotificationService implements INotificationService
             if (existsNotification.getStatus().equals(NotificationStatus.UNREAD)) existsNotification.setStatus(NotificationStatus.READ);
             else existsNotification.setStatus(NotificationStatus.UNREAD);
 
-            NotificationResponse response = modelMapper.map(notificationRepository.save(existsNotification),  NotificationResponse.class);
+            NotificationResponse response = modelMapper.map(notificationRepository.save(existsNotification), NotificationResponse.class);
+            response.setActorId(existsNotification.getActor().getId());
+            response.setUserId(existsNotification.getUser().getId());
 
             return response;
 

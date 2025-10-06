@@ -10,6 +10,7 @@ import com.busuu.app.entities.User;
 import com.busuu.app.entities.UserLanguage;
 import com.busuu.app.entities.Correction;
 import com.busuu.app.entities.Post;
+import com.busuu.app.entities.enums.NotificationType;
 import com.busuu.app.entities.enums.PostType;
 import com.busuu.app.entities.topics.Topic;
 import com.busuu.app.exceptions.DataNotFoundException;
@@ -22,6 +23,7 @@ import com.busuu.app.repositories.UserLanguageRepository;
 import com.busuu.app.repositories.UserRepository;
 import com.busuu.app.services.cloudinary.IUploadCloudinaryService;
 import com.busuu.app.services.friendship.IFriendshipService;
+import com.busuu.app.services.notification.INotificationService;
 import com.busuu.app.specification.PostSpecification;
 import com.busuu.app.utils.UploadCloudinaryUtil;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +68,10 @@ public class PostService implements IPostService
     private final TopicRepository topicRepository;
 
     private final UserLanguageRepository userLanguageRepository;
+
+    private final INotificationService notificationService;
+
+
 
     @Override
     @Transactional
@@ -115,6 +121,10 @@ public class PostService implements IPostService
             postResponse.setLanguageId(language.getId());
             postResponse.setCorrectionCount(0);
             postResponse.setTopicId(newPost.getTopic().getId());
+
+            //Send notification to friends
+            notificationService.addNotification(newPost.getId(), NotificationType.NEW_POST, null);
+
             return postResponse;
 
         } catch (Exception e) {

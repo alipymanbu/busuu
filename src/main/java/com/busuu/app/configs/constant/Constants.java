@@ -61,6 +61,7 @@ public class Constants {
     public static final String PATH_PARAM_ID = "/{id}";
     public static final String PATH_PARAM_USER = "/user";
     public static final String PATH_PARAM_POST = "/posts";
+    public static final String REPORT = "/reports";
     public static final String SELF_DATA = "/self";
 
     public static class SOCKET_DESTINATION {
@@ -198,6 +199,9 @@ public class Constants {
         // Correction
         public static final String ERR_CREATE_NEW_CORRECTION = "ERR_CREATE_NEW_CORRECTION";
         public static final String ERR_GET_CORRECTION = "ERR_GET_CORRECTION";
+
+        // Report
+        public static final String ERR_CREATE_NEW_REPORT = "ERR_CREATE_NEW_REPORT";
 
         // Reaction
         public static final String ERR_ADD_REACTION = "ERR_ADD_REACTION";

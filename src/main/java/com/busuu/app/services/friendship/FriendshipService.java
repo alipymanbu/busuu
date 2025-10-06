@@ -271,8 +271,8 @@ public class FriendshipService implements IFriendshipService
 
             for (UserLanguage userLanguage : userLanguages)
             {
-                if (userLanguage.getLearningStatus().equals(LearningStatus.IN_PROGRESS)) learning.add(userLanguage.getLanguage().getName());
-                if (!userLanguage.getSpeakingStatus().equals(SpeakingStatus.NO_PROFICIENCY)) speaking.add(userLanguage.getLanguage().getName());
+                if ( userLanguage.getLearningStatus() != null && userLanguage.getLearningStatus().equals(LearningStatus.IN_PROGRESS)) learning.add(userLanguage.getLanguage().getName());
+                if ( userLanguage.getSpeakingStatus() != null && !userLanguage.getSpeakingStatus().equals(SpeakingStatus.NO_PROFICIENCY) ) speaking.add(userLanguage.getLanguage().getName());
             }
 
             Specification<UserLanguage> spec = UserLanguageSpecification.getSpecification(learning, speaking);

@@ -30,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.redisson.api.RedissonClient;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -317,6 +319,10 @@ public class UserService implements IUserService {
     }
 
     @Override
+    @Cacheable(
+            value = "user-info-cache",
+            key = "'userId:' + #userId"
+    )
     public UserInfoResponse getUserInfoById(String requestId, String userId)
     {
         try {

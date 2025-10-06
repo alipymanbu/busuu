@@ -17,6 +17,7 @@ import com.busuu.app.exceptions.InvalidFileException;
 import com.busuu.app.repositories.CorrectionRepository;
 import com.busuu.app.repositories.PostRepository;
 import com.busuu.app.repositories.ReactionRepository;
+import com.busuu.app.repositories.UserRepository;
 import com.busuu.app.services.cloudinary.IUploadCloudinaryService;
 import com.busuu.app.services.notification.NotificationService;
 import com.busuu.app.specification.CorrectionSpecification;
@@ -49,6 +50,8 @@ public class CorrectionService implements ICorrectionService
 
     private final ReactionRepository reactionRepository;
 
+    private final UserRepository userRepository;
+
     private final ModelMapper modelMapper;
 
     private final IUploadCloudinaryService uploadCloudinaryService;
@@ -69,13 +72,20 @@ public class CorrectionService implements ICorrectionService
             Correction newCorrection = modelMapper.map(correctionDTO, Correction.class);
             newCorrection.setId(UUID.randomUUID().toString());
 
-            //Valid postId, correctionId
+            //Valid postId, correctionId, tagged
             Post existingPost = null;
             Correction existingCorrection = null;
+            User taggedUser = null;
+
+            if (correctionDTO.getTagId() != null)
+            {
+                taggedUser = userRepository.findById(correctionDTO.getTagId())
+                        .orElseThrow(() -> new DataNotFoundException("Tagged user not found"));
+
+            }
 
             if ( correctionDTO.getCorrectionId() != null  && correctionDTO.getPostId() != null  ) throw new IllegalArgumentException("A correction cannot both belong to a post and another correction!");
             if ( correctionDTO.getCorrectionId() == null  && correctionDTO.getPostId() == null  ) throw new IllegalArgumentException("A correction must belong to a post or another correction!");
-
 
             if (correctionDTO.getCorrectionId() != null)
             {
@@ -121,10 +131,12 @@ public class CorrectionService implements ICorrectionService
                 newCorrection.setCorrectionAudioUrl(cloudinaryResponse.getUrl());
                 newCorrection.setCorrectionAudioName(cloudinaryResponse.getPublicId());
             }
-            //Get and set user/posts
+
+            //Get and set user/posts/tag
             newCorrection.setUser(user);
             newCorrection.setPost(existingPost);
             newCorrection.setCorrection(existingCorrection);
+            newCorrection.setTaggedUser(taggedUser);
 
             //Save and map return
             newCorrection = correctionRepository.save(newCorrection);
@@ -132,9 +144,9 @@ public class CorrectionService implements ICorrectionService
             correctionResponse.setUserId(user.getId());
             correctionResponse.setPostId(newCorrection.getPost() != null ? newCorrection.getPost().getId() : null);
             correctionResponse.setCorrectionId(newCorrection.getCorrection() != null ? newCorrection.getCorrection().getId() : null);
-            correctionResponse.setReaction(null);
             correctionResponse.setLikeCount(0);
             correctionResponse.setDislikeCount(0);
+            if (newCorrection.getTaggedUser() != null) correctionResponse.setTagId(newCorrection.getTaggedUser().getId());
 
             if ( existingPost != null ) notificationService.addNotification(existingPost.getId(), NotificationType.POST_CORRECTED, null);
             else notificationService.addNotification(existingCorrection.getId(), NotificationType.CORRECTION_REPLIED, null);
@@ -163,9 +175,9 @@ public class CorrectionService implements ICorrectionService
             correctionResponse.setPostId(correction.getPost() != null ? correction.getPost().getId() : null);
             correctionResponse.setCorrectionId(correction.getCorrection() != null ? correction.getCorrection().getId() : null);
 
+            //Get reaction of self account to the correction
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             User user = (User) auth.getPrincipal();
-
             Reaction reaction = reactionRepository.findByUserIdAndCorrectionId(user.getId(), correctionId);
             if (reaction != null) correctionResponse.setReaction(reaction.getReactionType().name());
             else correctionResponse.setReaction(null);
@@ -175,6 +187,7 @@ public class CorrectionService implements ICorrectionService
             correctionResponse.setLikeCount(likeCount);
             correctionResponse.setDislikeCount(dislikeCount);
             correctionResponse.setReplyIds(getReplyList(correctionResponse.getId()));
+            if (correction.getTaggedUser() != null) correctionResponse.setTagId(correction.getTaggedUser().getId());
 
             return correctionResponse;
 
@@ -214,6 +227,7 @@ public class CorrectionService implements ICorrectionService
                 correctionResponse.setLikeCount(likeCount);
                 correctionResponse.setDislikeCount(dislikeCount);
                 correctionResponse.setReplyIds(getReplyList(correctionResponse.getId()));
+                if (correction.getTaggedUser() != null) correctionResponse.setTagId(correction.getTaggedUser().getId());
 
                 return correctionResponse;
 
@@ -254,6 +268,7 @@ public class CorrectionService implements ICorrectionService
                 correctionResponse.setLikeCount(likeCount);
                 correctionResponse.setDislikeCount(dislikeCount);
                 correctionResponse.setReplyIds(getReplyList(correctionResponse.getId()));
+                if (correction.getTaggedUser() != null) correctionResponse.setTagId(correction.getTaggedUser().getId());
 
                 return correctionResponse;
 
@@ -293,6 +308,7 @@ public class CorrectionService implements ICorrectionService
                 correctionResponse.setLikeCount(likeCount);
                 correctionResponse.setDislikeCount(dislikeCount);
                 correctionResponse.setReplyIds(getReplyList(correctionResponse.getId()));
+                if (correction.getTaggedUser() != null) correctionResponse.setTagId(correction.getTaggedUser().getId());
 
                 return correctionResponse;
 
@@ -368,6 +384,7 @@ public class CorrectionService implements ICorrectionService
             correctionResponse.setLikeCount(likeCount);
             correctionResponse.setDislikeCount(dislikeCount);
             correctionResponse.setReplyIds(getReplyList(correctionResponse.getId()));
+            if (existingCorrection.getTaggedUser() != null) correctionResponse.setTagId(existingCorrection.getTaggedUser().getId());
 
             return correctionResponse;
 

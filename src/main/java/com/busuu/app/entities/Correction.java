@@ -44,8 +44,9 @@ public class Correction extends BaseEntity
     @Column(name = "comment")
     private String comment;
 
-    @Column(name = "tag_id")
-    private String tagId;
+    @ManyToOne
+    @JoinColumn(name = "tagged_user")
+    private User taggedUser;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

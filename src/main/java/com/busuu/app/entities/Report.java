@@ -1,7 +1,11 @@
 package com.busuu.app.entities;
 
 import com.busuu.app.entities.enums.NotificationStatus;
-import com.busuu.app.entities.enums.NotificationType;
+import com.busuu.app.entities.enums.ReportType;
+import com.busuu.app.entities.progresses.LevelProgress;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nimbusds.openid.connect.sdk.claims.UserInfo;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,18 +21,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
-@Table(name = "notification")
+@Table(name = "report")
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Getter
-@Setter
-public class Notification extends BaseEntity
+public class Report extends BaseEntity
 {
 
     @Id
-    @Column(name = "notification_id")
+    @Column(name = "report_id")
     private String id;
 
     @ManyToOne
@@ -37,20 +45,11 @@ public class Notification extends BaseEntity
     @Column(name = "destination_id")
     private String destinationId;
 
-    @ManyToOne
-    @JoinColumn(name = "actor_id")
-    private User actor;
-
     @Column(name = "message")
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Builder.Default
-    @Column(name = "status")
-    private NotificationStatus status = NotificationStatus.UNREAD;
-
-    @Enumerated(EnumType.STRING)
     @Column(name = "type")
-    private NotificationType type;
+    private ReportType type;
 
 }

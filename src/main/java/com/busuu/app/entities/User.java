@@ -168,6 +168,11 @@ public class User extends BaseEntity implements UserDetails {
 
     @JsonIgnore
     @Builder.Default
+    @OneToMany(mappedBy = "taggedUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Correction> taggedList = new ArrayList<>();
+
+    @JsonIgnore
+    @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Reaction> reactions = new ArrayList<>();
 
@@ -175,6 +180,11 @@ public class User extends BaseEntity implements UserDetails {
     @Builder.Default
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Notification> notificationUser = new ArrayList<>();
+
+    @JsonIgnore
+    @Builder.Default
+    @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Notification> actors = new ArrayList<>();
 
 
     @Override

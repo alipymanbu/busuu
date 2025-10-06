@@ -2,6 +2,7 @@ package com.busuu.app.dtos.requests.correction;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,7 @@ public class CorrectionDTO
     private MultipartFile correctionAudio;
 
     @JsonProperty("correction_text")
+    @Size(max = 5000, message = "Invalid correction length (maximum length is 5000 words)!")
     private String correctionText;
 
     @JsonProperty("post_id")
@@ -30,6 +32,7 @@ public class CorrectionDTO
     private String correctionId;
 
     @JsonProperty("comment")
+    @Size(max = 5000, message = "Invalid comment length (maximum length is 5000 words)!")
     @NotBlank(message = "Comment cannot be blank")
     private String comment;
 
