@@ -14,7 +14,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,7 @@ public class ChapterSpecification
 {
 
     //For List<String> filter only
-    private static final Set<String> FILTER_FIELDS = Set.of("courseId", "levelId");
+    //private static final Set<String> FILTER_FIELDS = Set.of("courseId", "levelId");
     private static final Set<String> SORT_FIELDS = Set.of("title", "chapterOrder" , "courseTitle" , "levelCode", "createdAt", "updatedAt");
 
     public static Specification<Chapter> getSpecification(
@@ -37,7 +36,8 @@ public class ChapterSpecification
             List<String> sortDirection
     )
     {
-        return (Root<Chapter> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+        return (Root<Chapter> root, CriteriaQuery<?> query, CriteriaBuilder cb) ->
+        {
 
             //Predicate act like a single condition
             List<Predicate> predicates = new ArrayList<>();
@@ -45,7 +45,6 @@ public class ChapterSpecification
             //Joining
             Join<Chapter, Course> courseJoin = root.join("course", JoinType.LEFT);
             Join<Chapter, Level> levelJoin = root.join("level", JoinType.LEFT);
-
 
             //Filter then search then sort progress
 
@@ -80,21 +79,17 @@ public class ChapterSpecification
             if (course != null && !course.isEmpty()) predicates.add(cb.equal(cb.lower(courseJoin.get("id")), course));
             if (level != null && !level.isEmpty()) predicates.add(cb.equal(cb.lower(levelJoin.get("id")), level));
 
-
-
             //Global search ("LIKE" SEARCH)
             if (searchValue != null && !searchValue.isEmpty())
             {
 
-                String val = null;
-                String[] range = null;
-                Boolean isDateInput = false;
+                String val;
+                boolean isDateInput = false;
 
                 //Process for date-time and date input
 
                 String dateTimeRegex = "^([01]?[0-9]|2[0-3]):([0-5]?[0-9])\\s([0-2]?[0-9]|3[01])/(0[1-9]|1[0-2])/([0-9]{4})$";
                 String dateRegex = "^([0-2]?[0-9]|3[01])/(0[1-9]|1[0-2])/([0-9]{4})$";
-
 
                 // Create a pattern and matcher
                 Pattern dateTimePattern = Pattern.compile(dateTimeRegex);
@@ -103,9 +98,9 @@ public class ChapterSpecification
                 Pattern datePattern = Pattern.compile(dateRegex);
                 Matcher dateMatcher = datePattern.matcher(searchValue);
 
-                if (dateTimeMatcher.matches()) val = formatDateTime(searchValue);
-                else if (dateMatcher.matches()) isDateInput = true;
-                else val = "%" + searchValue.toLowerCase() + "%"; //For search not exact (cb.like)
+                //For search not exact (cb.like)
+                if (dateMatcher.matches()) isDateInput = true;
+                val = "%" + searchValue.toLowerCase() + "%";
 
                 //For search exact (cb.equal)
                 //String val = searchValue.toLowerCase();
@@ -120,23 +115,18 @@ public class ChapterSpecification
                     updatedAtPredicate = cb.between(root.get("updatedAt"), dateRange[0], dateRange[1]);
 
                 }
-                else
+                else if (dateTimeMatcher.matches())
                 {
-                    createdAtPredicate = cb.like(
-                            cb.lower(cb.function("DATE_FORMAT", String.class, root.get("createdAt"), cb.literal("%H:%i %d/%m/%Y"))),
-                            val
-                    );
-                    updatedAtPredicate = cb.like(
-                            cb.lower(cb.function("DATE_FORMAT", String.class, root.get("updatedAt"), cb.literal("%H:%i %d/%m/%Y"))),
-                            val
-                    );
+                    LocalDateTime[] dateTimeRange = formatDateTime(searchValue);
+                    createdAtPredicate = cb.between(root.get("createdAt"), dateTimeRange[0], dateTimeRange[1]);
+                    updatedAtPredicate = cb.between(root.get("updatedAt"), dateTimeRange[0], dateTimeRange[1]);
+
                 }
 
                 Predicate titlePredicate = cb.like(cb.lower(root.get("title")), val);
                 Predicate chapterOrderPredicate = cb.like(cb.toString(root.get("chapterOrder")), val);
                 Predicate courseTitlePredicate = cb.like(cb.lower(courseJoin.get("title")), val);
                 Predicate levelCodePredicate = cb.like(cb.lower(levelJoin.get("code")), val);
-
 
                 predicates.add(cb.or(
                         createdAtPredicate,
@@ -145,17 +135,18 @@ public class ChapterSpecification
                         chapterOrderPredicate,
                         courseTitlePredicate,
                         levelCodePredicate));
+
             }
-
-
 
             //Sorting
             List<Order> orders = new ArrayList<>();
 
             if (sortBy != null && !sortBy.isEmpty())
             {
+
                 for (int i = 0; i < sortBy.size(); i++)
                 {
+
                     String sortColumn = sortBy.get(i);
 
                     String direction = "asc";
@@ -164,7 +155,6 @@ public class ChapterSpecification
                     if (!direction.equals("asc") && !direction.equals("desc")) {
                         throw new IllegalArgumentException("Unsupported sort direction: " + direction + "; Support sort by: asc, desc");
                     }
-
 
                     if (!SORT_FIELDS.contains(sortColumn)) {
                         throw new IllegalArgumentException("Unsupported sort column: " + sortColumn + "; Support filter by: " + SORT_FIELDS);
@@ -219,41 +209,41 @@ public class ChapterSpecification
             //Avoid duplicate case
             orders.add(cb.asc(root.get("id")));
 
-
             query.orderBy(orders);
 
             //Criteria Builder (cb here) acting like a WHERE clause, which require predicate parameter is an Array of Predicate
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+
     }
 
-    public static String formatDateTime(String userInput)
+    public static LocalDateTime[] formatDateTime(String userInput)
     {
+
         //The input format the user gives
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-
-        //Parse the user input
         LocalDateTime dateTime = LocalDateTime.parse(userInput, inputFormatter);
 
-        //UTC +7
-        dateTime = dateTime.minusHours(7);
+        //This LocalDateTime is already fixed by itself -7
+        LocalDateTime start = dateTime.minusMinutes(dateTime.getMinute()).withSecond(0);
+        LocalDateTime end = dateTime.plusMinutes(59 - dateTime.getMinute()).withSecond(59);
 
-        //Format the adjusted date/time back to string
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        return new LocalDateTime[]{start, end};
 
-        // Return the formatted adjusted string
-        return dateTime.format(outputFormatter);
     }
 
     public static LocalDateTime[] formatDateToRange(String userInput)
     {
-        //Will get chapter which between 17h the previous day of input to 17h of the day of input
+
+        //The input format the user gives
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         LocalDate date = LocalDate.parse(userInput, inputFormatter);
 
-        LocalDateTime start = date.minusDays(1).atTime(17, 0);
-        LocalDateTime end = date.atTime(17, 0);
+        //This LocalDateTime is already fixed by itself -7
+        LocalDateTime start = date.minusDays(1).atTime(23, 59,0);
+        LocalDateTime end = date.atTime(23, 59, 59);
 
         return new LocalDateTime[]{start, end};
+
     }
 }

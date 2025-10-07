@@ -94,8 +94,9 @@ public class NotificationService implements INotificationService
                 //DestinationId: Post
                 case NEW_POST:
                 {
-                    Post destinationPost = postRepository.findById(destinationId)
-                            .orElseThrow( ()-> new DataNotFoundException("Cannot find post with ID"));
+                    
+                    boolean existingPost = postRepository.existsById(destinationId);
+                    if (!existingPost) throw new DataNotFoundException("Cannot find post with ID");
 
                     message = " has posted a new post";
 
@@ -147,9 +148,7 @@ public class NotificationService implements INotificationService
 
                     message = " has replied your correction";
 
-                    if (destinationCorrection.getUser().getId().equals(userActor.getId())) giveNotification = false;
-                    if (destinationCorrection.getTaggedUser() != null) toUserList.add(destinationCorrection.getTaggedUser().getId());
-                    else toUserList.add(destinationCorrection.getUser().getId());
+                    if (destinationCorrection.getTaggedUser() != null ) toUserList.add(destinationCorrection.getTaggedUser().getId());
 
                     break;
                 }

@@ -36,7 +36,8 @@ public class TopicSpecification
             List<String> sortDirection
     )
     {
-        return (Root<Topic> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
+        return (Root<Topic> root, CriteriaQuery<?> query, CriteriaBuilder cb) ->
+        {
 
             //Predicate act like a single condition
             List<Predicate> predicates = new ArrayList<>();
@@ -48,7 +49,6 @@ public class TopicSpecification
             if (topicType != null && !topicType.isEmpty()) {
                 predicates.add(cb.equal(root.get("topicType"), TopicType.valueOf(topicType.toUpperCase())));
             }
-
 
             //Filter then search then sort
 
@@ -87,14 +87,12 @@ public class TopicSpecification
             {
 
                 String val = null;
-                //String[] range = null;
                 boolean isDateInput = false;
 
                 //Process for date-time and date input
 
                 String dateTimeRegex = "^([01]?[0-9]|2[0-3]):([0-5]?[0-9])\\s([0-2]?[0-9]|3[01])/(0[1-9]|1[0-2])/([0-9]{4})$";
                 String dateRegex = "^([0-2]?[0-9]|3[01])/(0[1-9]|1[0-2])/([0-9]{4})$";
-
 
                 // Create a pattern and matcher
                 Pattern dateTimePattern = Pattern.compile(dateTimeRegex);
@@ -103,15 +101,14 @@ public class TopicSpecification
                 Pattern datePattern = Pattern.compile(dateRegex);
                 Matcher dateMatcher = datePattern.matcher(searchValue);
 
-                if (dateTimeMatcher.matches()) val = formatDateTime(searchValue);
-                else if (dateMatcher.matches()) isDateInput = true;
-                else val = "%" + searchValue.toLowerCase() + "%"; //For search not exact (cb.like)
+                if (dateMatcher.matches()) isDateInput = true;
+                val = "%" + searchValue.toLowerCase() + "%";
 
                 //For search exact (cb.equal)
                 //String val = searchValue.toLowerCase();
 
-                Predicate createdAtPredicate;
-                Predicate updatedAtPredicate;
+                Predicate createdAtPredicate = null;
+                Predicate updatedAtPredicate = null;
 
                 if (isDateInput)
                 {
@@ -120,16 +117,11 @@ public class TopicSpecification
                     updatedAtPredicate = cb.between(root.get("updatedAt"), dateRange[0], dateRange[1]);
 
                 }
-                else
+                else if (dateTimeMatcher.matches())
                 {
-                    createdAtPredicate = cb.like(
-                            cb.lower(cb.function("DATE_FORMAT", String.class, root.get("createdAt"), cb.literal("%H:%i %d/%m/%Y"))),
-                            val
-                    );
-                    updatedAtPredicate = cb.like(
-                            cb.lower(cb.function("DATE_FORMAT", String.class, root.get("updatedAt"), cb.literal("%H:%i %d/%m/%Y"))),
-                            val
-                    );
+                    LocalDateTime[] dateTimeRange = formatDateTime(searchValue);
+                    createdAtPredicate = cb.between(root.get("createdAt"), dateTimeRange[0], dateTimeRange[1]);
+                    updatedAtPredicate = cb.between(root.get("updatedAt"), dateTimeRange[0], dateTimeRange[1]);
 
                 }
 
@@ -137,7 +129,6 @@ public class TopicSpecification
                         createdAtPredicate,
                         updatedAtPredicate));
             }
-
 
             //Sorting
             List<Order> orders = new ArrayList<>();
@@ -193,33 +184,33 @@ public class TopicSpecification
         };
     }
 
-    public static String formatDateTime(String userInput)
+    public static LocalDateTime[] formatDateTime(String userInput)
     {
+
         //The input format the user gives
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
-
-        //Parse the user input
         LocalDateTime dateTime = LocalDateTime.parse(userInput, inputFormatter);
 
-        //UTC +7
-        dateTime = dateTime.minusHours(7);
+        //This LocalDateTime is already fixed by itself -7
+        LocalDateTime start = dateTime.minusMinutes(dateTime.getMinute()).withSecond(0);
+        LocalDateTime end = dateTime.plusMinutes(59 - dateTime.getMinute()).withSecond(59);
 
-        //Format the adjusted date/time back to string
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
+        return new LocalDateTime[]{start, end};
 
-        // Return the formatted adjusted string
-        return dateTime.format(outputFormatter);
     }
 
     public static LocalDateTime[] formatDateToRange(String userInput)
     {
-        //Will get chapter which between 17h the previous day of input to 17h of the day of input
+
+        //The input format the user gives
         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         LocalDate date = LocalDate.parse(userInput, inputFormatter);
 
-        LocalDateTime start = date.minusDays(1).atTime(17, 0);
-        LocalDateTime end = date.atTime(17, 0);
+        //This LocalDateTime is already fixed by itself -7
+        LocalDateTime start = date.minusDays(1).atTime(23, 59,0);
+        LocalDateTime end = date.atTime(23, 59, 59);
 
         return new LocalDateTime[]{start, end};
+
     }
 }

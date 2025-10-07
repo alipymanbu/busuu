@@ -149,7 +149,7 @@ public class CorrectionService implements ICorrectionService
             if (newCorrection.getTaggedUser() != null) correctionResponse.setTagId(newCorrection.getTaggedUser().getId());
 
             if ( existingPost != null ) notificationService.addNotification(existingPost.getId(), NotificationType.POST_CORRECTED, null);
-            else notificationService.addNotification(existingCorrection.getId(), NotificationType.CORRECTION_REPLIED, null);
+            else notificationService.addNotification(newCorrection.getId(), NotificationType.CORRECTION_REPLIED, null);
 
             return correctionResponse;
 
