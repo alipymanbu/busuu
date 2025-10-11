@@ -4,8 +4,14 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/busuu-learn-language?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: ${MYSQL_ROOT_PASSWORD:Busuu@230523}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
   jpa:
     show-sql: true
     hibernate:
@@ -25,8 +31,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: busuu.service@gmail.com
-    password: ccdpsjepfylqftts
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -37,30 +43,30 @@ spring:
             trust: smtp.gmail.com
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-#  flyway:
-#    enabled: true
-#    locations: classpath:/db/migration,classpath:/dev/db/migration
-#    baseline-on-migrate: true
-#    baseline-version: 0
+      max-file-size: ${MAX_FILE_SIZE}
+      max-request-size: ${MAX_REQUEST_SIZE}
+  #  flyway:
+  #    enabled: true
+  #    locations: classpath:/db/migration,classpath:/dev/db/migration
+  #    baseline-on-migrate: true
+  #    baseline-version: 0
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: 395250688466-fun0nunkb1audoiv8leiiuediv3365ko.apps.googleusercontent.com
-            client-secret: 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
-            redirect-uri: "http://localhost:3000/auth/google/callback"
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: ${GOOGLE_REDIRECT_URI}
             scope:
               - email
               - profile
             provider: google
 
           facebook:
-            client-id: 1466181787896061
-            client-secret: 331779654921601ddbc793c2807a5069
-            redirect-uri: "http://localhost:3000/auth/facebook/callback"
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
+            redirect-uri: ${FACEBOOK_REDIRECT_URI}
             scope:
               - email
               - public_profile
@@ -88,9 +94,9 @@ server:
     context-path: ${CONTEXT_PATH:/api/v1}
 
 jwt:
-  expiration: 2592000 #30 days
-  expiration-refresh-token: 5184000 #60 days
-  secretKey: jtc6zcRYQr5lZj4UCIwkIbLjpP/AhDbSiZhUHa5VoGw=
+  expiration: ${JWT_EXPIRATION}
+  expiration-refresh-token: ${JWT_EXPIRATION_REFRESH_TOKEN}
+  secretKey: ${JWT_SECRET_KEY}
 
 logging:
   level:
@@ -126,18 +132,17 @@ management:
 
 cache:
   redis:
-    expiration: 3600
-    cluster: false
-    server: redis://127.0.0.1:6379
-    db: 0
-    connection-pool-size: 8
-    connection-minimum-idle-size: 2
-    subscription-connection-pool-size: 8
+    expiration: ${REDIS_EXPIRATION}
+    cluster: ${REDIS_CLUSTER}
+    server: ${REDIS_SERVER}
+    db: ${REDIS_DB}
+    connection-pool-size: ${CONNECTION_POOL_SIZE:2}
+    connection-minimum-idle-size: ${CONNECTION_MINIMUM_IDE_SIZE:1}
+    subscription-connection-pool-size: ${SUBSCRIPTION_CONNECTION_POOL_SIZE:2}
     ttl: 5
 
 services:
   openai:
-    endpoint: ${ENDPOINT:https://api.openai.com/v1}
-    model: ${MODEL:gpt-4.1-nano}
-    api-key: ${API-KEY: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}
-
+    endpoint: ${OPENAI_ENDPOINT}
+    model: ${OPENAI_MODEL}
+    api-key: ${OPENAI_API_KEY}

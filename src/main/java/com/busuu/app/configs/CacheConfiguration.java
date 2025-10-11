@@ -63,12 +63,12 @@ public class CacheConfiguration {
             createCache(cm, "default-query-results-region", jcacheConfiguration);
 
             // Cache Entities
-            createCache(cm, Level.class.getName(), jcacheConfiguration);
-            createCache(cm, Role.class.getName(), jcacheConfiguration);
-            createCache(cm, Lesson.class.getName(), jcacheConfiguration);
-            createCache(cm, Word.class.getName(), jcacheConfiguration);
-            createCache(cm, Chapter.class.getName(), jcacheConfiguration);
-            createCache(cm, Language.class.getName(), jcacheConfiguration);
+//            createCache(cm, Level.class.getName(), jcacheConfiguration);
+//            createCache(cm, Role.class.getName(), jcacheConfiguration);
+//            createCache(cm, Lesson.class.getName(), jcacheConfiguration);
+//            createCache(cm, Word.class.getName(), jcacheConfiguration);
+//            createCache(cm, Chapter.class.getName(), jcacheConfiguration);
+//            createCache(cm, Language.class.getName(), jcacheConfiguration);
 
             // Cache Queries
             createCache(cm, "word-cache", jcacheConfiguration);
