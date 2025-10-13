@@ -72,7 +72,6 @@ public class CacheConfiguration {
 
             // Cache Queries
             createCache(cm, "word-cache", jcacheConfiguration);
-            createCache(cm, "user-info-cache", jcacheConfiguration);
 
             // Service Cache
             createCache(cm, CacheKey.USER_PRINCIPAL.getName(), jcacheConfiguration);

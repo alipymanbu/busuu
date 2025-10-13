@@ -318,11 +318,6 @@ public class UserService implements IUserService {
         }
     }
 
-    @Override
-    @Cacheable(
-            value = "user-info-cache",
-            key = "'userId:' + #userId"
-    )
     public UserInfoResponse getUserInfoById(String requestId, String userId)
     {
         try {
